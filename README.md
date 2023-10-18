@@ -56,7 +56,7 @@ be run (just by smashing `x`) or for less commonly used functionality.
     opts = { direction = 'vertical', size = 80, shell = "ipython --no-autoindent" },
   },
   {
-  "GCBallesteros/NotebookNavigator.nvim",
+    "GCBallesteros/NotebookNavigator.nvim",
     keys = {
       { "]h", function() require("notebook-navigator").move_cell("d") end },
       { "[h", function() require("notebook-navigator").move_cell("u") end },
@@ -65,13 +65,13 @@ be run (just by smashing `x`) or for less commonly used functionality.
     dependencies = {
       -- "echasnovski/mini.comment",
       -- "hkupty/iron.nvim", -- repl provider
-      "akinsho/toggleterm.nvim", -- repl provider
+      "akinsho/toggleterm.nvim", -- alternative repl provider
       -- "anuvyklack/hydra.nvim",
     },
     event = "VeryLazy",
     main = "notebook-navigator",
     opts = { repl_provider = "toggleterm" },
-  }
+  },
 ```
 
 ## Mini.ai integration
