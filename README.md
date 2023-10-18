@@ -51,26 +51,27 @@ I personally like to have the moving between cell commands and cell executing fu
 available through leader keymaps but will turn to the Hydra head when many cells need to
 be run (just by smashing `x`) or for less commonly used functionality.
 ```lua
-{
+  {
+    "akinsho/toggleterm.nvim",
+    opts = { direction = 'vertical', size = 80, shell = "ipython --no-autoindent" },
+  },
+  {
   "GCBallesteros/NotebookNavigator.nvim",
-  keys = {
-    { "]h", function() require("notebook-navigator").move_cell "d" end },
-    { "[h", function() require("notebook-navigator").move_cell "u" end },
-    { "<leader>X", "<cmd>lua require('notebook-navigator').run_cell()<cr>" },
-    { "<leader>x", "<cmd>lua require('notebook-navigator').run_and_move()<cr>" },
-  },
-  dependencies = {
-    "echasnovski/mini.comment",
-    "hkupty/iron.nvim", -- repl provider
-    -- or "akinsho/toggleterm.nvim" -- repl provider
-    "anuvyklack/hydra.nvim",
-  },
-  event = "VeryLazy",
-  config = function()
-    local nn = require "notebook-navigator"
-    nn.setup({ activate_hydra_keys = "<leader>h" })
-  end,
-}
+    keys = {
+      { "]h", function() require("notebook-navigator").move_cell("d") end },
+      { "[h", function() require("notebook-navigator").move_cell("u") end },
+      { "<S-CR>", function() require("notebook-navigator").run_and_move() end },
+    },
+    dependencies = {
+      -- "echasnovski/mini.comment",
+      -- "hkupty/iron.nvim", -- repl provider
+      "akinsho/toggleterm.nvim", -- repl provider
+      -- "anuvyklack/hydra.nvim",
+    },
+    event = "VeryLazy",
+    main = "notebook-navigator",
+    opts = { repl_provider = "toggleterm" },
+  }
 ```
 
 ## Mini.ai integration
