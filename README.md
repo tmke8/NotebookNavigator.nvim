@@ -53,7 +53,7 @@ be run (just by smashing `x`) or for less commonly used functionality.
 ```lua
   {
     "akinsho/toggleterm.nvim",
-    opts = { direction = 'vertical', size = 80, shell = "ipython --no-autoindent" },
+    opts = { direction = 'vertical', size = 80 },
   },
   {
     "GCBallesteros/NotebookNavigator.nvim",
