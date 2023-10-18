@@ -39,6 +39,12 @@ repls.toggleterm = function(start_line, end_line, repl_args)
   if repl_args then
     id = repl_args.id or 1
   end
+
+  local toggleterm = require("toggleterm")
+  if not require("toggleterm.terminal").get(id) then
+    toggleterm.exec("ipython --no-autoindent", id)
+  end
+
   local current_window = vim.api.nvim_get_current_win()
   local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, 0)
 
@@ -52,12 +58,13 @@ repls.toggleterm = function(start_line, end_line, repl_args)
     local l = line
     if l == "" then
       cmd = cmd .. string.char(15) .. string.char(14)
+      -- cmd = cmd .. string.char(14) .. string.char(15)
     else
       cmd = cmd .. l .. string.char(10)  -- ^J (line feed)
     end
   end
-  cmd = cmd .. string.char(4)  -- ^D (end of transmission)
-  require("toggleterm").exec(cmd, id)
+  -- cmd = cmd .. string.char(4)  -- ^D (end of transmission)
+  toggleterm.exec(cmd, id)
 
   -- Jump back with the cursor where we were at the beginning of the selection
   local cursor_line, cursor_col = unpack(vim.api.nvim_win_get_cursor(0))
