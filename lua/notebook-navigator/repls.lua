@@ -6,14 +6,45 @@ repls.iron = function(start_line, end_line, repl_args)
   require("iron.core").send(nil, lines)
 end
 
+local function is_whitespace(str)
+  return str:match("^%s*$") ~= nil
+end
+
+-- Function to remove leading and ending whitespace strings
+local function trim_whitespace_strings(lines)
+  local start_idx, end_idx = 1, #lines
+
+  -- Find the index of the first non-whitespace string
+  while start_idx <= #lines and is_whitespace(lines[start_idx]) do
+    start_idx = start_idx + 1
+  end
+
+  -- Find the index of the last non-whitespace string
+  while end_idx >= 1 and is_whitespace(lines[end_idx]) do
+    end_idx = end_idx - 1
+  end
+
+  -- Create a new table containing only the non-whitespace strings
+  local trimmed_lines = {}
+  for i = start_idx, end_idx do
+    table.insert(trimmed_lines, lines[i])
+  end
+
+  return trimmed_lines
+end
+
 -- toggleterm
 repls.toggleterm = function(start_line, end_line, repl_args)
   local id = 1
-  local trim_spaces = true
   if repl_args then
     id = repl_args.id or 1
-    trim_spaces = repl_args.trim_spaces or true
   end
+
+  local toggleterm = require("toggleterm")
+  if not require("toggleterm.terminal").get(id) then
+    toggleterm.exec("ipython --no-autoindent", id)
+  end
+
   local current_window = vim.api.nvim_get_current_win()
   local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, 0)
 
@@ -21,10 +52,19 @@ repls.toggleterm = function(start_line, end_line, repl_args)
     return
   end
 
-  for _, line in ipairs(lines) do
-    local l = trim_spaces and line:gsub("^%s+", ""):gsub("%s+$", "") or line
-    require("toggleterm").exec(l, id)
+  local cmd = string.char(15)  -- ^O (shift in)
+
+  for _, line in ipairs(trim_whitespace_strings(lines)) do
+    local l = line
+    if l == "" then
+      cmd = cmd .. string.char(15) .. string.char(14)
+      -- cmd = cmd .. string.char(14) .. string.char(15)
+    else
+      cmd = cmd .. l .. string.char(10)  -- ^J (line feed)
+    end
   end
+  -- cmd = cmd .. string.char(4)  -- ^D (end of transmission)
+  toggleterm.exec(cmd, id)
 
   -- Jump back with the cursor where we were at the beginning of the selection
   local cursor_line, cursor_col = unpack(vim.api.nvim_win_get_cursor(0))
