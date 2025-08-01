@@ -80,6 +80,12 @@ M.run_and_move = function(repl_args)
   core.run_and_move(cell_marker(), M.config.repl_provider, repl_args)
 end
 
+--- Run the current toplevel object (class, function, module-level statement) under
+--- the cursor and jump to the end of it.
+M.run_toplevel = function(repl_args)
+  core.run_toplevel(M.config.repl_provider, repl_args)
+end
+
 --- Comment all the contents of the cell under the cursor
 ---
 --- The commenting functionality is supported by external plugins. Currently the
