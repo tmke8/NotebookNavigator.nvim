@@ -63,10 +63,7 @@ be run (just by smashing `x`) or for less commonly used functionality.
       { "<S-CR>", function() require("notebook-navigator").run_and_move() end },
     },
     dependencies = {
-      -- "echasnovski/mini.comment",
-      -- "hkupty/iron.nvim", -- repl provider
-      "akinsho/toggleterm.nvim", -- alternative repl provider
-      -- "anuvyklack/hydra.nvim",
+      "akinsho/toggleterm.nvim",
     },
     event = "VeryLazy",
     main = "notebook-navigator",
