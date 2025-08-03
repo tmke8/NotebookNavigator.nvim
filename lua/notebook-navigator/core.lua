@@ -1,6 +1,6 @@
 local commenter = require "notebook-navigator.commenters"
 local get_repl = require "notebook-navigator.repls"
-local gen_spec = require('mini.ai').gen_spec
+local ts_queries = require('nvim-treesitter.query')
 
 local M = {}
 
@@ -29,69 +29,46 @@ M.miniai_spec = function(opts, cell_marker)
   return { from = from, to = to }
 end
 
--- Define specs for each type
-M.class_spec = gen_spec.treesitter({ a = '@class.outer', i = '@class.inner' })
-M.function_spec = gen_spec.treesitter({ a = '@function.outer', i = '@function.inner' })
-M.block_spec = gen_spec.treesitter({ a = '@block.outer', i = '@block.inner' })
-M.statement_spec = gen_spec.treesitter({ a = '@statement.outer', i = '@statement.inner' })
+M.map_to_range = function(m)
+  local range = vim.treesitter.get_range(m.node, buf_id, m.metadata)
 
--- Generic function to find the largest range containing the cursor
-M.find_largest_containing_range = function(ranges, cursor_line)
-  local best_match = nil
-  local best_size = -1
-  
-  for _, range in ipairs(ranges) do
-    -- Check if cursor is within this range (only need to check lines)
-    if cursor_line >= range.from.line and cursor_line <= range.to.line then
-      -- Calculate the size (number of lines)
-      local size = range.to.line - range.from.line + 1
-      
-      if size > best_size then
-        best_size = size
-        best_match = range
-      end
-    end
-  end
-  
-  return best_match
+  -- map to 1-indexed lines and 0-indexed columns
+  local from = { line = range[1] + 1, col = range[2] }
+  local to = { line = range[4] + 1, col = range[5] }
+
+  return { from = from, to = to }
 end
 
--- Find the largest text object containing the cursor
-M.find_toplevel = function(opts)
+M.get_toplevels = function()
+  local buf_id = vim.api.nvim_get_current_buf()
+  local matches = ts_queries.get_capture_matches_recursively(buf_id, '@toplevel', 'toplevels')
+  return vim.tbl_map(M.map_to_range, matches)
+end
+
+-- Find the toplevel containing the cursor
+M.find_toplevel = function()
+  -- Get all matched ranges for the toplevels
+  local ranges = M.get_toplevels()
+
   -- Get current cursor position
   local cursor = vim.api.nvim_win_get_cursor(0)
-  local cursor_line = cursor[1]
-  
-  -- Try to find containing class first
-  local class_ranges = M.class_spec(opts)
-  local class_match = M.find_largest_containing_range(class_ranges, cursor_line)
-  if class_match then
-    return class_match
+  local cursor_line = cursor[1]  -- the cursor line is 1-indexed in Neovim
+
+  local containing_range = nil
+  local next_range = nil
+
+  for _, range in ipairs(ranges) do
+    if containing_range then
+      -- We need to return the range after the one containing the cursor
+      next_range = range
+      break
+    -- Check if cursor is within this range (only need to check lines)
+    elseif cursor_line >= range.from.line and cursor_line <= range.to.line then
+      containing_range = range
+    end
   end
-  
-  -- If no class contains cursor, try functions
-  local function_ranges = M.function_spec(opts)
-  local function_match = M.find_largest_containing_range(function_ranges, cursor_line)
-  if function_match then
-    return function_match
-  end
-  
-  -- If no function contains cursor, try blocks
-  local block_ranges = M.block_spec(opts)
-  local block_match = M.find_largest_containing_range(block_ranges, cursor_line)
-  if block_match then
-    return block_match
-  end
-  
-  -- If no block contains cursor, try statements
-  local statement_ranges = M.statement_spec(opts)
-  local statement_match = M.find_largest_containing_range(statement_ranges, cursor_line)
-  if statement_match then
-    return statement_match
-  end
-  
-  -- Nothing found
-  return nil
+
+  return {containing_range = containing_range, next_range = next_range}
 end
 
 M.move_cell = function(dir, cell_marker)
@@ -144,21 +121,25 @@ end
 M.run_toplevel = function(repl_provider, repl_args)
   repl_args = repl_args or nil
   repl_provider = repl_provider or "auto"
-  local cell_object = M.find_toplevel("a")
-  if not cell_object then
+  local cell_object = M.find_toplevel()
+  local containing_range = cell_object.containing_range
+  local next_range = cell_object.next_range
+  if not containing_range then
     return nil
   end
 
   -- protect ourselves against the case with no actual lines of code
-  local n_lines = cell_object.to.line - cell_object.from.line + 1
+  local n_lines = containing_range.to.line - containing_range.from.line + 1
   if n_lines < 1 then
     return nil
   end
 
   local repl = get_repl(repl_provider)
-  repl(cell_object.from.line, cell_object.to.line, repl_args)
-  -- Move cursor to the end of the text object
-  vim.api.nvim_win_set_cursor(0, { cell_object.to.line, cell_object.to.col })
+  repl(containing_range.from.line, containing_range.to.line, repl_args)
+  if next_range then
+    -- Move cursor to the beginning of the next range
+    vim.api.nvim_win_set_cursor(0, { next_range.from.line, next_range.from.col })
+  end
 end
 
 M.comment_cell = function(cell_marker)
