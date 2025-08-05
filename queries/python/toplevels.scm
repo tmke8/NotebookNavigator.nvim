@@ -1,43 +1,20 @@
 ; inherit: python
 
-; Capture top-level function definitions
 (module
-  (function_definition) @toplevel)
-
-(module
-  (decorated_definition
-    (function_definition)) @toplevel)
-
-; Capture top-level class definitions
-(module
-  (class_definition) @toplevel)
-
-(module
-  (decorated_definition
-    (class_definition)) @toplevel)
-
-; Capture top-level imports
-(module
-  (import_statement) @toplevel)
-
-(module
-  (import_from_statement) @toplevel)
-
-; Capture other top-level statements (assignments, expressions, etc.)
-(module
-  (expression_statement) @toplevel)
-
-(module
-  (while_statement) @toplevel)
-
-(module
-  (for_statement) @toplevel)
-
-(module
-  (if_statement) @toplevel)
-
-(module
-  (match_statement) @toplevel)
-
-(module
-  (type_alias_statement) @toplevel)
+  [
+    (function_definition)
+    (class_definition)
+    (import_statement)
+    (import_from_statement)
+    (expression_statement)
+    (decorated_definition)
+    (if_statement)
+    (for_statement)
+    (while_statement)
+    (match_statement)
+    (try_statement)
+    (with_statement)
+    (raise_statement)
+    (assert_statement)
+    (type_alias_statement)
+  ] @toplevel)
