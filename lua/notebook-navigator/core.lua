@@ -139,6 +139,9 @@ M.run_toplevel = function(repl_provider, repl_args)
   if next_range then
     -- Move cursor to the beginning of the next range
     vim.api.nvim_win_set_cursor(0, { next_range.from.line, next_range.from.col })
+  else
+    -- If there is no next range, move to the end of the current range
+    vim.api.nvim_win_set_cursor(0, { containing_range.to.line, containing_range.to.col })
   end
 end
 
