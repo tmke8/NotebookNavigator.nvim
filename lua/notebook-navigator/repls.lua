@@ -2,15 +2,18 @@ local repls = {}
 
 -- iron.nvim
 repls.iron = function(start_line, end_line, repl_args)
-  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, 0)
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
   require("iron.core").send(nil, lines)
 end
 
+---@param str string
+---@return boolean # whether the string is empty or contains only whitespace
 local function is_whitespace(str)
   return str:match("^%s*$") ~= nil
 end
 
 -- Function to remove leading and ending whitespace strings
+---@param lines string[]
 local function trim_whitespace_strings(lines)
   local start_idx, end_idx = 1, #lines
 
@@ -34,6 +37,10 @@ local function trim_whitespace_strings(lines)
 end
 
 -- toggleterm
+---@param start_line integer
+---@param end_line integer
+---@param repl_args table|nil
+---@return nil
 repls.toggleterm = function(start_line, end_line, repl_args)
   local id = 1
   if repl_args then
@@ -46,13 +53,13 @@ repls.toggleterm = function(start_line, end_line, repl_args)
   end
 
   local current_window = vim.api.nvim_get_current_win()
-  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, 0)
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
 
   if not lines or not next(lines) then
     return
   end
 
-  local cmd = string.char(15)  -- ^O (shift in)
+  local cmd = string.char(15) -- ^O (shift in)
 
   for _, line in ipairs(trim_whitespace_strings(lines)) do
     local l = line
@@ -60,7 +67,7 @@ repls.toggleterm = function(start_line, end_line, repl_args)
       cmd = cmd .. string.char(15) .. string.char(14)
       -- cmd = cmd .. string.char(14) .. string.char(15)
     else
-      cmd = cmd .. l .. string.char(10)  -- ^J (line feed)
+      cmd = cmd .. l .. string.char(10) -- ^J (line feed)
     end
   end
   -- cmd = cmd .. string.char(4)  -- ^D (end of transmission)
@@ -74,8 +81,10 @@ repls.toggleterm = function(start_line, end_line, repl_args)
 end
 
 -- no repl
-repls.no_repl = function(_) end
+repls.no_repl = function(_, _, _) end
 
+---@param repl_provider "iron"|"toggleterm"|"auto"
+---@return fun(start_line: integer, end_line: integer, repl_args: table?): nil
 local get_repl = function(repl_provider)
   local repl_providers = { "iron", "toggleterm" }
   if repl_provider == "auto" then

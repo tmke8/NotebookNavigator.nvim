@@ -61,9 +61,11 @@ be run (just by smashing `x`) or for less commonly used functionality.
       { "]h", function() require("notebook-navigator").move_cell("d") end },
       { "[h", function() require("notebook-navigator").move_cell("u") end },
       { "<S-CR>", function() require("notebook-navigator").run_and_move() end },
+      { "<C-CR>", function() require("notebook-navigator").run_toplevel() end },
     },
     dependencies = {
       "akinsho/toggleterm.nvim",
+      "nvim-treesitter/nvim-treesitter",
     },
     event = "VeryLazy",
     main = "notebook-navigator",
