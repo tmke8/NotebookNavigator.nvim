@@ -39,6 +39,7 @@ local got_hydra, hydra = pcall(require, "hydra")
 local core = require "notebook-navigator.core"
 local utils = require "notebook-navigator.utils"
 
+---@return string
 local cell_marker = function()
   return utils.get_cell_marker(0, M.config.cell_markers)
 end
@@ -47,7 +48,7 @@ end
 
 --- Returns the boundaries of the current code cell.
 ---
----@param opts string Either "i" to select the inner lines of the cell or "a" for
+---@param opts "a" | "i" Either "i" to select the inner lines of the cell or "a" for
 ---   the outer cell.
 ---
 ---@return table Table with keys from/to indicating the start and end of the cell.
@@ -71,7 +72,7 @@ end
 
 --- Run the current cell under the cursor
 ---
----@param repl_args table|nil Optional config for the repl.
+---@param repl_args table? Optional config for the repl.
 M.run_cell = function(repl_args)
   core.run_cell(cell_marker(), M.config.repl_provider, repl_args)
 end
@@ -79,7 +80,7 @@ end
 --- Run the current cell under the cursor and jump to next cell. If no next cell
 --- is available it will create one like Jupyter notebooks.
 ---
----@param repl_args table|nil Optional config for the repl.
+---@param repl_args table? Optional config for the repl.
 M.run_and_move = function(repl_args)
   core.run_and_move(cell_marker(), M.config.repl_provider, repl_args)
 end
@@ -160,7 +161,7 @@ local function activate_hydra(config)
       M.add_cell_before,
       { desc = "Add cell after", nowait = true },
     },
-    { "q", nil, { exit = true, nowait = true, desc = "exit" } },
+    { "q",     nil, { exit = true, nowait = true, desc = "exit" } },
     { "<esc>", nil, { exit = true, nowait = true, desc = "exit" } },
   }
 

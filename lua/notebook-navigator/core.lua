@@ -277,7 +277,7 @@ end
 
 ---@param cell_marker string the cell marker to search for
 ---@param repl_provider "iron"|"toggleterm"|"auto" the REPL provider to use
----@param repl_args table|nil additional arguments to pass to the REPL provider, e.g. toggleterm id
+---@param repl_args table? additional arguments to pass to the REPL provider, e.g. toggleterm id
 M.run_cell = function(cell_marker, repl_provider, repl_args)
   repl_args = repl_args or nil
   repl_provider = repl_provider or "auto"
@@ -295,7 +295,7 @@ end
 
 ---@param cell_marker string the cell marker to search for
 ---@param repl_provider "iron"|"toggleterm"|"auto" the REPL provider to use
----@param repl_args table|nil additional arguments to pass to the REPL provider, e.g. toggleterm id
+---@param repl_args table? additional arguments to pass to the REPL provider, e.g. toggleterm id
 M.run_and_move = function(cell_marker, repl_provider, repl_args)
   M.run_cell(cell_marker, repl_provider, repl_args)
   local is_last_cell = M.move_cell("d", cell_marker) == "last"
@@ -309,7 +309,7 @@ M.run_and_move = function(cell_marker, repl_provider, repl_args)
 end
 
 ---@param repl_provider "iron"|"toggleterm"|"auto" the REPL provider to use
----@param repl_args table|nil additional arguments to pass to the REPL provider, e.g. toggleterm id
+---@param repl_args table? additional arguments to pass to the REPL provider, e.g. toggleterm id
 M.run_toplevel = function(repl_provider, repl_args)
   repl_args = repl_args or nil
   repl_provider = repl_provider or "auto"

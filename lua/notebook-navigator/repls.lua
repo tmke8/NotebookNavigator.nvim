@@ -84,6 +84,7 @@ end
 repls.no_repl = function(_, _, _) end
 
 ---@param repl_provider "iron"|"toggleterm"|"auto"
+---@return fun(start_line: integer, end_line: integer, repl_args: table?): nil
 local get_repl = function(repl_provider)
   local repl_providers = { "iron", "toggleterm" }
   if repl_provider == "auto" then
