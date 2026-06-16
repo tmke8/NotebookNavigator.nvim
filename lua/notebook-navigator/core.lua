@@ -5,6 +5,19 @@ local ts_range = ts._range or require('nvim-treesitter-textobjects._range')
 
 local M = {}
 
+---@class OurPos
+---@inlinedoc
+---@field line integer 1-indexed line number
+---@field col integer 0-indexed column numberumn
+
+---@class OurRange
+---@inlinedoc
+---@field from OurPos start position
+---@field to OurPos end position
+
+---@param opts "i"|"a" whether to include the cell marker in the range or not
+---@param cell_marker string the cell marker to search for
+---@return OurRange
 M.miniai_spec = function(opts, cell_marker)
   local start_line = vim.fn.search("^" .. cell_marker, "bcnW")
 
@@ -30,6 +43,8 @@ M.miniai_spec = function(opts, cell_marker)
   return { from = from, to = to }
 end
 
+---@param m Range6
+---@return OurRange
 M.map_to_range = function(m)
   -- local range = vim.treesitter.get_range(m.node, buf_id, m.metadata)
   local range = m
@@ -123,7 +138,6 @@ local get_query_matches = memoize(function(bufnr, query_group, root, root_lang)
       end
 
       if metadata.range and metadata.range[7] then
-        ---@cast metadata TSTextObjects.Metadata
         local query_name = metadata.range[7]
         local path = vim.split(query_name, '%.')
         insert_to_path(prepared_match, path, {
@@ -146,7 +160,7 @@ end)
 
 ---@param tbl table<string, any|table<string, any>> the table to access
 ---@param path string the '.' separated path
----@return any|nil result the value at path or nil
+---@return any|nil # result the value at path or nil
 local function get_at_path(tbl, path)
   if path == '' then
     return tbl
@@ -199,20 +213,27 @@ local function get_capture_ranges_recursively(bufnr, query_string, query_group)
   return ranges
 end
 
+---@return OurRange[]
 M.get_toplevels = function()
   local buf_id = vim.api.nvim_get_current_buf()
   local matches = get_capture_ranges_recursively(buf_id, '@toplevel', 'toplevels')
   return vim.tbl_map(M.map_to_range, matches)
 end
 
+---@class CellObject
+---@inlinedoc
+---@field containing_range OurRange|nil the range of the toplevel containing the cursor, or nil if there is no such toplevel
+---@field next_range OurRange|nil the range of the next toplevel after the one containing the cursor, or nil if there is no such toplevel
+
 -- Find the toplevel containing the cursor
+---@return CellObject
 M.find_toplevel = function()
   -- Get all matched ranges for the toplevels
   local ranges = M.get_toplevels()
 
   -- Get current cursor position
   local cursor = vim.api.nvim_win_get_cursor(0)
-  local cursor_line = cursor[1]  -- the cursor line is 1-indexed in Neovim
+  local cursor_line = cursor[1] -- the cursor line is 1-indexed in Neovim
 
   local containing_range = nil
   local next_range = nil
@@ -222,15 +243,18 @@ M.find_toplevel = function()
       -- We need to return the range after the one containing the cursor
       next_range = range
       break
-    -- Check if cursor is within this range (only need to check lines)
+      -- Check if cursor is within this range (only need to check lines)
     elseif cursor_line >= range.from.line and cursor_line <= range.to.line then
       containing_range = range
     end
   end
 
-  return {containing_range = containing_range, next_range = next_range}
+  return { containing_range = containing_range, next_range = next_range }
 end
 
+---@param dir "d" | "u" direction to move the cell, either down or up
+---@param cell_marker string the cell marker to search for
+---@return "last" | "first" | nil # whether we moved to the last cell, first cell, or a normal cell
 M.move_cell = function(dir, cell_marker)
   local search_res
   local result
@@ -251,6 +275,9 @@ M.move_cell = function(dir, cell_marker)
   return result
 end
 
+---@param cell_marker string the cell marker to search for
+---@param repl_provider "iron"|"toggleterm"|"auto" the REPL provider to use
+---@param repl_args table|nil additional arguments to pass to the REPL provider, e.g. toggleterm id
 M.run_cell = function(cell_marker, repl_provider, repl_args)
   repl_args = repl_args or nil
   repl_provider = repl_provider or "auto"
@@ -266,6 +293,9 @@ M.run_cell = function(cell_marker, repl_provider, repl_args)
   repl(cell_object.from.line, cell_object.to.line, repl_args)
 end
 
+---@param cell_marker string the cell marker to search for
+---@param repl_provider "iron"|"toggleterm"|"auto" the REPL provider to use
+---@param repl_args table|nil additional arguments to pass to the REPL provider, e.g. toggleterm id
 M.run_and_move = function(cell_marker, repl_provider, repl_args)
   M.run_cell(cell_marker, repl_provider, repl_args)
   local is_last_cell = M.move_cell("d", cell_marker) == "last"
@@ -278,6 +308,8 @@ M.run_and_move = function(cell_marker, repl_provider, repl_args)
   end
 end
 
+---@param repl_provider "iron"|"toggleterm"|"auto" the REPL provider to use
+---@param repl_args table|nil additional arguments to pass to the REPL provider, e.g. toggleterm id
 M.run_toplevel = function(repl_provider, repl_args)
   repl_args = repl_args or nil
   repl_provider = repl_provider or "auto"
@@ -305,6 +337,7 @@ M.run_toplevel = function(repl_provider, repl_args)
   end
 end
 
+---@param cell_marker string the cell marker to search for
 M.comment_cell = function(cell_marker)
   local cell_object = M.miniai_spec("i", cell_marker)
 
@@ -316,6 +349,7 @@ M.comment_cell = function(cell_marker)
   commenter(cell_object)
 end
 
+---@param cell_marker string the cell marker to search for
 M.add_cell_before = function(cell_marker)
   local cell_object = M.miniai_spec("a", cell_marker)
 
@@ -331,6 +365,7 @@ M.add_cell_before = function(cell_marker)
   M.move_cell("u", cell_marker)
 end
 
+---@param cell_marker string the cell marker to search for
 M.add_cell_after = function(cell_marker)
   local cell_object = M.miniai_spec("a", cell_marker)
 

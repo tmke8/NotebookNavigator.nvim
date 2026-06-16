@@ -63,7 +63,7 @@ end
 ---
 ---@param dir string Movement direction. "d" for down and "u" for up.
 ---
----@return string If movement failed return "first" or "last" if we where at the
+---@return string|nil # If movement failed return "first" or "last" if we where at the
 ---   first/last cell.
 M.move_cell = function(dir)
   return core.move_cell(dir, cell_marker())
